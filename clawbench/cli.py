@@ -11,21 +11,9 @@ import click
 
 from clawbench.client import GatewayConfig
 from clawbench.harness import BenchmarkHarness, KNOWN_ADAPTERS
+from clawbench.schemas import ScenarioDomain
 
-SCENARIO_CHOICES = [
-    "file_system_ops",
-    "web_info_ops",
-    "calendar_reminders",
-    "communication_messaging",
-    "data_processing_analysis",
-    "coding_dev_assist",
-    "personal_life_assistant",
-    "multi_step_compound",
-    "context_continuation",
-    "error_boundary_cases",
-    "skill_calling",
-    "system_capabilities",
-]
+SCENARIO_CHOICES = [scenario.value for scenario in ScenarioDomain]
 
 
 @click.group()
@@ -55,7 +43,7 @@ def cli(verbose: bool) -> None:
     default="",
     help="Optional advisory LLM judge model (does not affect official score)",
 )
-@click.option("--runs", "-n", default=5, help="Runs per task (reliability uses all runs)")
+@click.option("--runs", "-n", default=3, show_default=True, help="Runs per task (reliability uses all runs)")
 @click.option("--tier", type=click.Choice(["tier1", "tier2", "tier3", "tier4", "tier5"]), help="Filter tier")
 @click.option("--scenario", type=click.Choice(SCENARIO_CHOICES), help="Filter query scenario")
 @click.option("--artifact-type", type=click.Choice(["file", "information", "operation", "code", "external_action", "memory", "automation", "mixed"]), help="Filter expected artifact type")
