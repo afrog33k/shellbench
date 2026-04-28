@@ -13,5 +13,7 @@ def test_public_dockerfiles_copy_public_task_sets():
             "PARTNER_TRACE_SPEC.md ./"
         ) in contents
         assert "COPY --chown=node:node tasks-public/ tasks-public/" in contents
+        assert "COPY --chown=node:node profiles/ profiles/" in contents
+        assert "COPY --chown=node:node baselines/ baselines/" in contents
         assert "COPY --chown=node:node tasks-domain/ tasks-domain/" in contents
         assert "COPY --chown=node:node tasks/ tasks/" not in contents
