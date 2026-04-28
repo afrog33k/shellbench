@@ -33,6 +33,11 @@ dev = [
     "ruff>=0.9,<1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/openclaw/clawbench"
+Repository = "https://github.com/openclaw/clawbench"
+"Bug Tracker" = "https://github.com/openclaw/clawbench/issues"
+
 [project.scripts]
 clawbench = "clawbench.cli:main"
 
