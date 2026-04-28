@@ -11,7 +11,22 @@ Runs the repository test suite automatically on:
 It uses Python 3.11 and 3.12, installs the package with
 `pip install -e .`, runs `python -m pytest -q`, then builds a wheel and
 checks that runtime data such as `tasks-public/`, `profiles/`, and
-`baselines/` are included.
+`baselines/` are included. Runs under the `openclaw` organization use the
+Blacksmith Ubuntu runner; forks fall back to GitHub-hosted `ubuntu-latest`.
+
+## `ci-check-testbox.yml` — Blacksmith Testbox warmup
+
+This workflow exists for the Blacksmith CLI:
+
+```bash
+blacksmith testbox warmup ci-check-testbox.yml --ref main --idle-timeout 90
+blacksmith testbox run --id <tbx_id> "python -m pytest -q"
+```
+
+It installs ClawBench, hydrates provider/HF secrets into
+`~/.clawbench-testbox-live.profile`, restores optional Codex/Claude/Gemini
+dotfiles from repo or org secrets, and installs
+`~/.local/bin/clawbench-testbox-env` for commands that need that live auth.
 
 ## `sync-to-hf-space.yml` — auto-mirror main to the HF Space
 
