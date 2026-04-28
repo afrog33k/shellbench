@@ -37,8 +37,8 @@ the HF Space is a pure deploy target.
 
 ## One-time setup (required before the workflow can succeed)
 
-The workflow needs **two repository secrets**. Neither is checked into
-the repo; you add them via the GitHub UI.
+The workflow needs one repository secret. It can also use an optional
+fallback username secret.
 
 ### 1. Get a Hugging Face access token
 
@@ -52,12 +52,12 @@ the repo; you add them via the GitHub UI.
 ### 2. Add the secrets to this repo
 
 1. Go to <https://github.com/openclaw/clawbench/settings/secrets/actions>
-2. Click **"New repository secret"** and add each of these:
+2. Click **"New repository secret"** and add:
 
    | Name          | Value                                                      |
    |---------------|------------------------------------------------------------|
    | `HF_TOKEN`    | The write-scoped HF token you created in step 1            |
-   | `HF_USERNAME` | The Hugging Face username used with the write token        |
+   | `HF_USERNAME` | Optional fallback if token introspection fails             |
 
 3. Save both.
 
@@ -85,11 +85,11 @@ status under the Actions tab for any commit.
   workflow mirror it.
 - **Failure modes:**
   - **Missing secrets** → the `Verify required secrets` step fails with
-    a clear error message telling you what to add.
+    a clear error message telling you to add `HF_TOKEN`.
   - **Revoked token** → push fails with a 401; check that `HF_TOKEN`
     still has Write scope on <https://huggingface.co/settings/tokens>.
-  - **Wrong username** → push fails with a repo-not-found error; make
-    sure `HF_USERNAME` matches the Space owner in the URL.
+  - **Missing Space** → the workflow creates the Docker Space before
+    pushing, using `HF_SPACE_ID` or the default `openclaw/clawbench`.
 
 ## Optional: change the target Space
 

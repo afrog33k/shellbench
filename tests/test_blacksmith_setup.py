@@ -26,3 +26,12 @@ def test_testbox_helper_sources_hydrated_profile():
     assert ".clawbench-testbox-live.profile" in script
     assert "clawbench-testbox-env" in script
     assert "source \"$profile_path\"" in script
+
+
+def test_hf_sync_ensures_space_before_push():
+    workflow = Path(".github/workflows/sync-to-hf-space.yml").read_text(encoding="utf-8")
+
+    assert "Ensure HF Space exists" in workflow
+    assert "api.create_repo(" in workflow
+    assert "space_sdk=\"docker\"" in workflow
+    assert "steps.hf.outputs.username" in workflow
