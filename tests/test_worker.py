@@ -91,7 +91,12 @@ def test_configure_browser_runtime_sets_benchmark_safe_openclaw_config(monkeypat
     assert json.loads(config_path.read_text(encoding="utf-8")) == {
         "agents": {"defaults": {"skipBootstrap": True}},
         "browser": {"headless": True, "noSandbox": True},
+        "tools": {"exec": {"host": "gateway", "security": "full", "ask": "off"}},
+        "approvals": {"exec": {"enabled": False}},
     }
+    approvals = json.loads((state_dir / "exec-approvals.json").read_text(encoding="utf-8"))
+    assert approvals["defaults"] == {"security": "full", "ask": "off", "askFallback": "full"}
+    assert approvals["agents"]["*"] == {"security": "full", "ask": "off", "askFallback": "full"}
 
 
 def test_configure_browser_runtime_pins_subagents_to_active_model(monkeypatch):
@@ -118,6 +123,8 @@ def test_configure_browser_runtime_pins_subagents_to_active_model(monkeypatch):
             }
         },
         "browser": {"headless": True, "noSandbox": True},
+        "tools": {"exec": {"host": "gateway", "security": "full", "ask": "off"}},
+        "approvals": {"exec": {"enabled": False}},
     }
 
 
@@ -215,6 +222,11 @@ def test_materialize_lane_runtime_spaces_ports_and_copies_auth(tmp_path: Path, m
     assert lane1.port == GATEWAY_PORT + GATEWAY_PORT_SPACING
     assert lane1.state_dir is not None
     assert (lane1.state_dir / "agents" / "main" / "agent" / "auth-profiles.json").exists()
+    lane_cfg = json.loads((lane1.state_dir / "openclaw.json").read_text(encoding="utf-8"))
+    assert lane_cfg["tools"]["exec"] == {"host": "gateway", "security": "full", "ask": "off"}
+    assert lane_cfg["approvals"]["exec"] == {"enabled": False}
+    lane_approvals = json.loads((lane1.state_dir / "exec-approvals.json").read_text(encoding="utf-8"))
+    assert lane_approvals["defaults"] == {"security": "full", "ask": "off", "askFallback": "full"}
 
 
 @pytest.mark.asyncio
