@@ -20,6 +20,46 @@ def test_testbox_workflow_hydrates_secrets_and_dotfiles():
     assert "CLAWBENCH_CODEX_AUTH_JSON" in workflow
 
 
+def test_crabbox_config_uses_actions_hydration():
+    config = Path(".crabbox.yaml").read_text(encoding="utf-8")
+
+    assert "profile: clawbench-check" in config
+    assert "provider: aws" in config
+    assert "workflow: .github/workflows/crabbox-hydrate.yml" in config
+    assert "job: hydrate" in config
+    assert "baseRef: main" in config
+    assert "- clawbench" in config
+    assert "- CLAWBENCH_*" in config
+    assert "- OPENCLAW_*" in config
+
+
+def test_crabbox_workflow_hydrates_secrets_dotfiles_and_ready_marker():
+    workflow = Path(".github/workflows/crabbox-hydrate.yml").read_text(encoding="utf-8")
+
+    assert "crabbox_id:" in workflow
+    assert "crabbox_runner_label:" in workflow
+    assert 'runs-on: [self-hosted, "${{ inputs.crabbox_runner_label }}"]' in workflow
+    assert "actions/setup-python@v5" in workflow
+    assert "python -m pip install -e ." in workflow
+    assert "scripts/ci-hydrate-testbox-env.sh" in workflow
+    assert "HF_TOKEN" in workflow
+    assert "OPENCLAW_CODEX_AUTH_JSON" in workflow
+    assert "CLAWBENCH_CODEX_AUTH_JSON" in workflow
+    assert "/usr/local/bin/clawbench-testbox-env" in workflow
+    assert "$HOME/.crabbox/actions/${{ inputs.crabbox_id }}.env" in workflow
+    assert "crabbox_keep_alive_minutes" in workflow
+
+
+def test_crabbox_skill_documents_clawbench_flow():
+    skill = Path(".agents/skills/crabbox/SKILL.md").read_text(encoding="utf-8")
+
+    assert "openclaw/crabbox" in skill
+    assert ".crabbox.yaml" in skill
+    assert "crabbox actions hydrate" in skill
+    assert "clawbench-testbox-env" in skill
+    assert ".github/workflows/crabbox-hydrate.yml" in skill
+
+
 def test_testbox_helper_sources_hydrated_profile():
     script = Path("scripts/ci-hydrate-testbox-env.sh").read_text(encoding="utf-8")
 

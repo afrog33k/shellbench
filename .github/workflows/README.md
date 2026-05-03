@@ -29,6 +29,22 @@ It installs ClawBench, hydrates provider/HF secrets into
 dotfiles from repo or org secrets, and installs
 `~/.local/bin/clawbench-testbox-env` for commands that need that live auth.
 
+## `crabbox-hydrate.yml` — Crabbox Actions hydration
+
+This workflow exists for the Crabbox CLI from `openclaw/crabbox`:
+
+```bash
+crabbox warmup --idle-timeout 90m
+crabbox actions hydrate --id <cbx_id-or-slug>
+crabbox run --id <cbx_id-or-slug> --shell -- "python -m pytest -q"
+```
+
+It runs on the dynamic self-hosted runner label registered by Crabbox, installs
+ClawBench, hydrates the same provider/HF secrets and agent dotfiles as the
+Blacksmith Testbox workflow, writes the Crabbox ready marker under
+`~/.crabbox/actions/`, and keeps the job alive for follow-up SSH sync/run
+commands.
+
 ## `sync-to-hf-space.yml` — auto-mirror main to the HF Space
 
 Mirrors every push to `main` into the HF Space git remote so

@@ -10,6 +10,11 @@ agent dotfiles, Docker, or a benchmark run that is too heavy for the local
 machine. Keep normal unit-test iteration local unless the user asks for
 Testbox proof.
 
+Crabbox is the sibling lane for reusable owned-capacity proof. Use
+`.agents/skills/crabbox/SKILL.md` and `.crabbox.yaml` when ClawBench needs
+AWS-backed reusable boxes or Crabbox sync/log/result inspection. Keep this
+skill focused on Blacksmith CI parity.
+
 ## Warmup
 
 Run from the repository root:
