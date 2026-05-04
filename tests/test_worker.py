@@ -6,7 +6,14 @@ from types import SimpleNamespace
 import pytest
 
 from clawbench.queue import Job, JobQueue, JobStatus, SubmissionRequest
-from clawbench.worker import GATEWAY_PORT, GATEWAY_PORT_SPACING, EvalWorker, JobProgressTracker, ParallelLane
+from clawbench.worker import (
+    GATEWAY_PORT,
+    GATEWAY_PORT_SPACING,
+    OPENCLAW_EVAL_SYSTEM_PROMPT,
+    EvalWorker,
+    JobProgressTracker,
+    ParallelLane,
+)
 
 
 class DummyTask:
@@ -91,7 +98,12 @@ def test_configure_browser_runtime_sets_benchmark_safe_openclaw_config(monkeypat
     assert json.loads(config_path.read_text(encoding="utf-8")) == {
         "agents": {"defaults": {"skipBootstrap": True}},
         "browser": {"headless": True, "noSandbox": True},
+        "tools": {"exec": {"host": "gateway", "security": "full", "ask": "off"}},
+        "approvals": {"exec": {"enabled": False}},
     }
+    approvals = json.loads((state_dir / "exec-approvals.json").read_text(encoding="utf-8"))
+    assert approvals["defaults"] == {"security": "full", "ask": "off", "askFallback": "full"}
+    assert approvals["agents"]["*"] == {"security": "full", "ask": "off", "askFallback": "full"}
 
 
 def test_configure_browser_runtime_pins_subagents_to_active_model(monkeypatch):
@@ -114,10 +126,56 @@ def test_configure_browser_runtime_pins_subagents_to_active_model(monkeypatch):
             "defaults": {
                 "skipBootstrap": True,
                 "model": {"primary": "openai-codex/gpt-5.4"},
+                "models": {"openai-codex/gpt-5.4": {"params": {"fastMode": True}}},
+                "systemPromptOverride": OPENCLAW_EVAL_SYSTEM_PROMPT,
                 "subagents": {"model": {"primary": "openai-codex/gpt-5.4"}},
             }
         },
         "browser": {"headless": True, "noSandbox": True},
+        "tools": {"exec": {"host": "gateway", "security": "full", "ask": "off"}},
+        "approvals": {"exec": {"enabled": False}},
+    }
+
+
+def test_configure_browser_runtime_uses_gateway_env_config_path(tmp_path: Path, monkeypatch):
+    worker = EvalWorker(JobQueue())
+    worker.set_active_model("openai-codex/gpt-5.4")
+    parent_state = tmp_path / "parent"
+    lane_state = tmp_path / "lane"
+    parent_state.mkdir()
+    lane_state.mkdir()
+    parent_config = parent_state / "openclaw.json"
+    lane_config = lane_state / "openclaw.json"
+    parent_config.write_text("{}", encoding="utf-8")
+    lane_config.write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("OPENCLAW_STATE_DIR", str(parent_state))
+
+    worker._configure_browser_runtime(
+        ["node", "/openclaw/dist/cli.js"],
+        {
+            "OPENCLAW_STATE_DIR": str(lane_state),
+            "OPENCLAW_CONFIG_PATH": str(lane_config),
+        },
+    )
+
+    assert json.loads(parent_config.read_text(encoding="utf-8")) == {}
+    lane_data = json.loads(lane_config.read_text(encoding="utf-8"))
+    assert lane_data["agents"]["defaults"]["model"]["primary"] == "openai-codex/gpt-5.4"
+    assert lane_data["tools"]["exec"] == {"host": "gateway", "security": "full", "ask": "off"}
+    assert (lane_state / "exec-approvals.json").exists()
+    assert not (parent_state / "exec-approvals.json").exists()
+
+
+def test_eval_model_defaults_pin_openai_to_sse_transport() -> None:
+    data: dict[str, object] = {}
+
+    changed = EvalWorker._apply_eval_model_defaults(data, "openai/gpt-5.5")
+
+    assert changed is True
+    assert data["agents"]["defaults"]["models"]["openai/gpt-5.5"]["params"] == {
+        "fastMode": True,
+        "transport": "sse",
+        "openaiWsWarmup": False,
     }
 
 
@@ -215,6 +273,11 @@ def test_materialize_lane_runtime_spaces_ports_and_copies_auth(tmp_path: Path, m
     assert lane1.port == GATEWAY_PORT + GATEWAY_PORT_SPACING
     assert lane1.state_dir is not None
     assert (lane1.state_dir / "agents" / "main" / "agent" / "auth-profiles.json").exists()
+    lane_cfg = json.loads((lane1.state_dir / "openclaw.json").read_text(encoding="utf-8"))
+    assert lane_cfg["tools"]["exec"] == {"host": "gateway", "security": "full", "ask": "off"}
+    assert lane_cfg["approvals"]["exec"] == {"enabled": False}
+    lane_approvals = json.loads((lane1.state_dir / "exec-approvals.json").read_text(encoding="utf-8"))
+    assert lane_approvals["defaults"] == {"security": "full", "ask": "off", "askFallback": "full"}
 
 
 @pytest.mark.asyncio

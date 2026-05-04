@@ -28,7 +28,14 @@ logger = logging.getLogger(__name__)
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 
 # Local fallback when HF is unavailable
-LOCAL_QUEUE_DIR = Path("/data/queue") if Path("/data").exists() else Path("data/queue")
+def _resolve_local_queue_dir() -> Path:
+    override = os.environ.get("CLAWBENCH_LOCAL_QUEUE_DIR", "").strip()
+    if override:
+        return Path(override).expanduser()
+    return Path("/data/queue") if Path("/data").exists() else Path("data/queue")
+
+
+LOCAL_QUEUE_DIR = _resolve_local_queue_dir()
 
 
 class JobStatus(str, Enum):
@@ -50,6 +57,7 @@ class SubmissionRequest(BaseModel):
     runs_per_task: int = Field(default=3, ge=1, le=10)
     max_parallel_lanes: int = Field(default=1, ge=1, le=8)
     tier: str | None = None  # Filter to a specific tier
+    task_ids: list[str] = Field(default_factory=list)
     scenario: str | None = None
     prompt_variant: str = "clear"
     submitter: str = ""  # HF username
@@ -65,6 +73,7 @@ class SubmissionRequest(BaseModel):
             "runs_per_task": self.runs_per_task,
             "max_parallel_lanes": self.max_parallel_lanes,
             "tier": self.tier or "",
+            "task_ids": sorted({task_id.strip() for task_id in self.task_ids if task_id.strip()}),
             "scenario": self.scenario or "",
             "prompt_variant": self.prompt_variant,
         }
