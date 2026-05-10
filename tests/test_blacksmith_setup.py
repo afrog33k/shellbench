@@ -46,7 +46,9 @@ def test_crabbox_workflow_hydrates_secrets_dotfiles_and_ready_marker():
     assert "OPENCLAW_CODEX_AUTH_JSON" in workflow
     assert "CLAWBENCH_CODEX_AUTH_JSON" in workflow
     assert "/usr/local/bin/clawbench-testbox-env" in workflow
-    assert "$HOME/.crabbox/actions/${{ inputs.crabbox_id }}.env" in workflow
+    assert "CRABBOX_ID: ${{ inputs.crabbox_id }}" in workflow
+    assert "Invalid crabbox_id" in workflow
+    assert "$HOME/.crabbox/actions/${CRABBOX_ID}.env" in workflow
     assert "crabbox_keep_alive_minutes" in workflow
 
 
@@ -55,9 +57,17 @@ def test_crabbox_skill_documents_clawbench_flow():
 
     assert "openclaw/crabbox" in skill
     assert ".crabbox.yaml" in skill
+    assert "Default backend: `blacksmith-testbox`" in skill
+    assert "separate `blacksmith-testbox` skill" in skill
+    assert "crabbox run --provider blacksmith-testbox" in skill
     assert "crabbox actions hydrate" in skill
     assert "clawbench-testbox-env" in skill
     assert ".github/workflows/crabbox-hydrate.yml" in skill
+    assert "blacksmith testbox warmup ci-check-testbox.yml" in skill
+
+
+def test_blacksmith_rules_live_in_crabbox_skill():
+    assert not Path(".agents/skills/blacksmith-testbox/SKILL.md").exists()
 
 
 def test_testbox_helper_sources_hydrated_profile():
